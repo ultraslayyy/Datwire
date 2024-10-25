@@ -23,3 +23,5 @@
 
 - ![Javascript](https://img.shields.io/badge/JavaScript-FFCA28?style=for-the-badge&logo=javascript&logoColor=black)
 - ![Socket.io](https://img.shields.io/badge/Socket.io-black?style=for-the-badge&logo=socket.io&badgeColor=010101)
+- ![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+- ![HTTP](https://img.shields.io/badge/HTTP-007ACC?style=for-the-badge&logo=http&logoColor=white)
