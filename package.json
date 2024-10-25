@@ -13,6 +13,7 @@
     "bcrypt": "^5.1.1",
     "body-parser": "^1.20.3",
     "express": "^4.21.1",
+    "http-server": "^14.1.1",
     "jsonwebtoken": "^9.0.2",
     "sqlite3": "^5.1.7",
     "we": "^0.3.2",
