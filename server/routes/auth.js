@@ -15,6 +15,17 @@ router.post('/register', (req, res) => {
         }
         res.status(201).json({ message: 'User registered successfully' });
     });
+
+    /*try {
+        const userExists = await db.findUser(username);
+        if (userExists) {
+            return res.status(400).json({ error: 'User already exists' });
+        }
+        await db.createUser(username, password);
+        res.status(201).json({ message: 'User registered successfully'});
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error'});
+    } */
 });
 
 // Login user
