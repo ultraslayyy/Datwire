@@ -70,3 +70,5 @@ function Chat({ user }) {
         </div>
     );
 }
+
+export default Chat;
