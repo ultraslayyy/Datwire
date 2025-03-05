@@ -24,7 +24,7 @@ mongoose.connect(process.env.MONGO_URI, {
 
 // User Schema
 const UserSchema = new mongoose.Schema({
-    username: { type: String, unique: true, required: true },
+    username: { type: String, required: true },
     password: { type: String, required: true },
 });
 
@@ -34,18 +34,34 @@ const User = mongoose.model('User', UserSchema);
 const MessageSchema = new mongoose.Schema({
     sender: String,
     content: String,
+    parentMessageId: { type: Schema.Types.ObjectId, ref: 'Message', default: null },
     timestamp: { type: Date, default: Date.now },
 });
 
 const Message = mongoose.model('Message', MessageSchema);
 
+const connectedUsers = new Map();
+
 // Routes
 app.post('/register', async (req, res) => {
     const { username, password } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username, password: hashedPassword });
-    await user.save();
-    res.json({ message: 'User registered' });
+    try {
+        const existingUser = await User.findOne({ username });
+
+        if (existingUser) {
+            return res.status(400).json({ error: 'Username is taken. Please pick another' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const user = new User({ username, password: hashedPassword });
+        await user.save();
+
+        res.json({ message: 'User registered' });
+    } catch (error) {
+        console.error('Registration error:', error);
+        res.status(500).json({ error: 'Server error. Please try again.' });
+    }
 });
 
 app.post('/login', async (req, res) => {
@@ -55,6 +71,7 @@ app.post('/login', async (req, res) => {
         return res.status(400).json({ error: 'Invalid credentials' });
     }
     const token = jwt.sign({ username }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
     res.json({ token });
 })
 
@@ -78,8 +95,22 @@ io.on('connection', (socket) => {
         io.emit('receiveMessage', message);
     });
 
+    socket.on('join', (username) => {
+        connectedUsers.set(username, socket.id);
+        io.emit('updateUsers', Array.from(connectedUsers.keys()));
+    });
+
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
+        // Update connected user list
+        for (let [username, id] of connectedUsers) {
+            if (id === socket.id) {
+                connectedUsers.delete(username);
+                break;
+            }
+        }
+
+        io.emit('updateUsers', Array.from(connectedUsers.keys()));
     });
 });
 
