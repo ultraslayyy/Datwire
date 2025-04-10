@@ -4,7 +4,7 @@ import * as schema from './schema';
 
 require('dotenv').config();
 
-let { PGCONNECTIONSTRING } = process.env;
+let { DATABASE_URL } = process.env;
 
-const client = postgres(PGCONNECTIONSTRING as string)
+const client = postgres(DATABASE_URL as string)
 export const db = drizzle(client, { schema, logger: false });

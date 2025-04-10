@@ -1,0 +1,104 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE TYPE channel_types as ENUM ('text', 'voice');
+
+CREATE TABLE IF NOT EXISTS users (
+    guid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    username VARCHAR(255) NOT NULL,
+    display_name VARCHAR(255),
+    description TEXT,
+    avatar_url TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT now() NOT NULL,
+    updated_at TIMESTAMP DEFAULT now() NOT NULL,
+    CONSTRAINT username_valid CHECK (LENGTH(username) >= 3 AND LENGTH(username) <= 32)
+);
+
+CREATE TABLE IF NOT EXISTS private_user_info (
+    userId UUID PRIMARY KEY DEFAULT,
+    user_email VARCHAR(255),
+    user_email_verified boolean,
+    user_password TEXT,
+    CONSTRAINT fk_user_id FOREIGN KEY (userId) REFERENCES users(guid) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS servers (
+    guid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner UUID NOT NULL,
+    server_name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT now() NOT NULL,
+    updated_at TIMESTAMP DEFAULT now() NOT NULL,
+    CONSTRAINT fk_owner FOREIGN key (owner) REFERENCES users(guid) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS server_categories (
+    server_guid UUID NOT NULL,
+    category_id UUID DEFAULT gen_random_uuid(),
+    category_name VARCHAR(128) NOT NULL,
+    CONSTRAINT fk_server_guid FOREIGN KEY (server_guid) REFERENCES servers(guid) ON DELETE CASCADE,
+    PRIMARY KEY (server_guid, category_id)
+);
+
+CREATE TABLE IF NOT EXISTS server_channels (
+    server_guid UUID NOT NULL,
+    category_guid UUID NOT NULL,
+    channel_id UUID DEFAULT gen_random_uuid(),
+    channel_name VARCHAR(128) NOT NULL,
+    channel_type channel_types NOT NULL,
+    CONSTRAINT fk_server_guid FOREIGN KEY (server_guid) REFERENCES servers(guid) ON DELETE CASCADE,
+    CONSTRAINT fk_category_guid FOREIGN KEY (category_guid) REFERENCES server_categories(category_id) ON DELETE CASCADE,
+    PRIMARY KEY (server_guid, category_guid, channel_id)
+);
+
+CREATE TABLE IF NOT EXISTS server_roles (
+    guid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    server_id UUID NOT NULL,
+    name TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT now() NOT NULL,
+    updated_at TIMESTAMP DEFAULT now() NOT NULL,
+    CONSTRAINT fk_server FOREIGN KEY (server_id) REFERENCES servers(guid) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS server_members (
+    server_guid UUID NOT NULL,
+    user_guid UUID NOT NULL,
+    joined_at TIMESTAMP DEFAULT now() NOT NULL,
+    CONSTRAINT fk_server_member_server FOREIGN KEY (server_guid) REFERENCES servers(guid) ON DELETE CASCADE,
+    CONSTRAINT fk_server_member_user FOREIGN KEY (user_guid) REFERENCES users(guid) ON DELETE CASCADE,
+    PRIMARY KEY (server_guid, user_guid)
+);
+
+CREATE TABLE IF NOT EXISTS server_emojis (
+    server_guid UUID NOT NULL,
+    emoji_name VARCHAR(32) NOT NULL,
+    emoji_image TEXT NOT NULL,
+    CONSTRAINT fk_server_guid FOREIGN KEY (server_guid) REFERENCES servers(guid) ON DELETE CASCADE,
+    PRIMARY KEY (server_guid, emoji_name)
+);
+
+CREATE TABLE IF NOT EXISTS member_roles (
+    user_guid UUID NOT NULL,
+    server_guid UUID NOT NULL,
+    role_id UUID NOT NULL,
+    CONSTRAINT fk_member_role_user FOREIGN KEY (user_guid) REFERENCES users(guid) ON DELETE CASCADE,
+    CONSTRAINT fk_member_role_server FOREIGN KEY (server_guid) REFERENCES servers(guid) ON DELETE CASCADE,
+    CONSTRAINT fk_member_role_role FOREIGN KEY (role_id) REFERENCES server_roles(guid) ON DELETE CASCADE,
+    PRIMARY KEY (user_guid, server_guid, role_id)
+);
+
+CREATE TABLE IF NOT EXISTS server_messages (
+    server_guid UUID NOT NULL,
+    channel_guid UUID NOT NULL,
+    user_guid UUID NOT NULL,
+    message_guid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    message_content TEXT,
+    created_at TIMESTAMP DEFAULT now() NOT NULL,
+    updated_at TIMESTAMP DEFAULT now() NOT NULL,
+    CONSTRAINT fk_server_guid FOREIGN KEY (server_guid) REFERENCES servers(guid) ON DELETE CASCADE,
+    CONSTRAINT fk_channel_guid FOREIGN KEY (channel_guid) REFERENCES server_channels(channel_id) ON DELETE CASCADE,
+    CONSTRAINT fk_user_guid FOREIGN KEY (user_guid) REFERENCES users(guid) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_server_name ON servers(server_name);
+CREATE INDEX IF NOT EXISTS idx_role_name ON server_roles(name);
+CREATE INDEX IF NOT EXISTS idx_member_roles ON member_roles(user_guid, server_guid);
