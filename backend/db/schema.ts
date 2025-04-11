@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, boolean, check, index, text, timestamp, varchar, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, boolean, check, index, text, timestamp, varchar, uuid, primaryKey } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
 export const channelTypes = pgEnum('channel_types', [
@@ -101,7 +101,9 @@ export const member_roles = pgTable('member_roles', {
     roleId: uuid('role_id')
         .references(() => roles.guid, { onDelete: 'cascade' })
         .notNull(),
-});
+}, (table) => ({
+    pk: primaryKey({ columns: [table.roleId, table.serverId, table.roleId] })
+}));
 
 export const messages = pgTable('messages', {
     serverId: uuid('server_guid')

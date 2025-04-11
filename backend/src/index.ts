@@ -4,19 +4,21 @@ import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import cors from 'cors'
 import path from 'path';
+import userRouter from './functions/getUsers';
 
 dotenv.config();
 
 const app: Express = express();
 const PORT_REST = 5001;
-const PORT_WS = 6000;
+const PORT_WS = 6001;
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const routes = {
-    getServers: require('./functions/getServers').default
+    getServers: require('./functions/getServers').default,
+    getUsers: require('./functions/getUsers').default
 };
 
 // Logging
@@ -48,6 +50,7 @@ app.get('/', async (req, res) => {
 Object.entries(routes).forEach(([name, route]) => {
     if (typeof route === 'function') {
         app.use(`/api/${name}`, route);
+        console.log(`Using '/api/${name}' at '${route}'`);
     } else {
         throw new Error(`Invalid middleware in route: ${name}`);
     }
@@ -71,6 +74,12 @@ const io = new Server(socket, {
 
 io.on('connection', (socket) => {
     console.log(`[Socket] Connected: ${socket.id}`);
+
+    socket.on('message-sent', (data) => {
+        console.log('Received message:', data);
+
+        socket.broadcast.emit('message-sent');
+    });
 
     socket.on('disconnect', () => {
         console.log(`[Socket] Disconnected: ${socket.id}`);
