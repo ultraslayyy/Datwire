@@ -34,7 +34,7 @@ const User = mongoose.model('User', UserSchema);
 const MessageSchema = new mongoose.Schema({
     sender: String,
     content: String,
-    parentMessageId: { type: Schema.Types.ObjectId, ref: 'Message', default: null },
+    //parentMessageId: { type: Schema.Types.ObjectId, ref: 'Message', default: null },
     timestamp: { type: Date, default: Date.now },
 });
 

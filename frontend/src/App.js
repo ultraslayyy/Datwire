@@ -2,7 +2,12 @@ import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import axios from 'axios';
 
-const socket = io('http://localhost:5000');
+const socket = io('https://chat.ultraslayyy.xyz', {
+    path: '/api/socket.io',
+    transports: ['websocket'],
+});
+
+axios.defaults.baseURL = 'https://chat.ultraslayyy.xyz'
 
 function App() {
   const [username, setUsername] = useState('');
@@ -24,7 +29,7 @@ function App() {
   // Load pre-existing messages upon login
   useEffect(() => {
     if (loggedIn) {
-      axios.get('http://localhost:5000/messages')
+      axios.get('/api/messages')
         .then(res => {
           setMessages(res.data);
         })
@@ -41,7 +46,7 @@ function App() {
   }, []);
 
   const handleRegister = async () => {
-    await axios.post('http://localhost:5000/register', { username, password });
+    await axios.post('/api/register', { username, password });
     alert('User registered! You can now log in.');
   };
 
@@ -49,7 +54,7 @@ function App() {
   const handleLogin = async () => {
     try {
       console.log('Attemptimg login with:', { username, password });
-      const res = await axios.post('http://localhost:5000/login', { username, password });
+      const res = await axios.post('/api/login', { username, password });
       console.log('Login Response:', res.data);
 
       if (res.status === 200) {
